@@ -1,0 +1,105 @@
+name: Pet&Pur GitHub Actions
+run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
+on:
+  pull_request:
+    branches:
+      - main
+jobs:
+  rust-quality:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v6
+      - name: List files in the repository
+        run: |
+          ls ${{ github.workspace }}
+      - name: Check Rust installation
+        run: |
+          rustc --version
+          cargo --version
+      - name: Install Rust components
+        run: rustup component add clippy rustfmt
+      - name: Check the formatting
+        #once the backend is initialised, we'll remove these temporary conditions so missing files cause the checks to fail.
+        if: ${{ hashFiles('backend/src/main.rs') != '' }} 
+        run: cargo fmt --all -- --check
+      - name: Check Clippy
+        #once the backend is initialised, we'll remove these temporary conditions so missing files cause the checks to fail.
+        if: ${{ hashFiles('backend/src/main.rs') != '' }}
+        run: cargo clippy --all-targets -- -D warnings
+      - name: Check Cargo Test
+        #once the backend is initialised, we'll remove these temporary conditions so missing files cause the checks to fail.
+        if: ${{ hashFiles('backend/src/main.rs') != '' }}
+        run: cargo test --workspace
+
+  react-quality:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v6
+      - name: Check Node.js installation
+        run: |
+          node --version
+          npm --version
+      - name: Install frontend dependencies
+        #once the frontend is initialised, we'll remove these temporary conditions so missing files cause the checks to fail.
+        if: ${{ hashFiles('frontend/package-lock.json') != '' }}
+        run: npm ci
+      - name: Check React code quality
+        #once the frontend is initialised, we'll remove these temporary conditions so missing files cause the checks to fail.
+        if: ${{ hashFiles('frontend/package-lock.json') != '' && hashFiles('frontend/package.json') != '' }}
+        run: npm run lint
+      - name: Build React application
+        #once the frontend is initialised, we'll remove these temporary conditions so missing files cause the checks to fail.
+        if: ${{ hashFiles('frontend/package-lock.json') != '' && hashFiles('frontend/package.json') != '' }}
+        run: npm run build
+
+  docker-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v6
+      - name: Validate Docker Compose
+        #once the docker setup is initialised, we'll remove these temporary conditions so missing files cause the checks to fail.
+        if: ${{ hashFiles('compose.yml') != '' }}
+        run: docker compose config -q
+      - name: Build Docker images
+        #once the docker setup is initialised, we'll remove these temporary conditions so missing files cause the checks to fail.
+        if: ${{ hashFiles('compose.yml') != '' && hashFiles('backend/Dockerfile') != '' && hashFiles('frontend/Dockerfile') != '' }}
+        run: docker compose build
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: ${{ vars.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_DB: ${{ vars.POSTGRES_DB }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://${{ vars.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@localhost:5432/${{ vars.POSTGRES_DB }}
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Check out repository code
+        uses: actions/checkout@v6
+      - name: Run integration tests
+        #once the database is initialised, we'll remove these temporary conditions so missing files cause the checks to fail.
+        if: ${{ hashFiles('backend/src/main.rs') != '' }}
+        run: cargo test --workspace
+      
