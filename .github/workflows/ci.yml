@@ -98,8 +98,17 @@ jobs:
     steps:
       - name: Check out repository code
         uses: actions/checkout@v6
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+      - name: Check PostgreSQL connection
+        run: |
+          pg_isready -h localhost -p 5432 -U ${{ vars.POSTGRES_USER }} -d ${{ vars.POSTGRES_DB }}
+      - name: Verify PostgreSQL authentication
+        run: psql "$DATABASE_URL" -c "SELECT 1;"
       - name: Run integration tests
         #once the database is initialised, we'll remove these temporary conditions so missing files cause the checks to fail.
-        if: ${{ hashFiles('backend/src/main.rs') != '' }}
-        run: cargo test --workspace
+        if: ${{ hashFiles('backend/src/main.rs') != '' && hashFiles('backend/tests/integration_tests.rs') != '' }}
+        run: cargo test --test integration_tests
       

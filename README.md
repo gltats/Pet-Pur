@@ -137,6 +137,12 @@ We want to maintain consistent coding standards throughout the project. To achie
 | Caddy | Caddy validation | Server configuration |
 | Docker | Docker Compose | Configuration validation |
 
+Diference between Rustfmt, Clippy and Cargo
+| Rust tools | What it checks |
+|rustfmt | Is the code formatted consistently? |
+|Clippy | Are we using suspicious, inefficient, or unnecessarily complicated patterns? |
+|cargo test | Does the code behave the way we intended? |
+
 ### Local Checks (once configured)
 
 **Rust:**
