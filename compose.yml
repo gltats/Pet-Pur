@@ -3,5 +3,11 @@ services:
     image: caddy:2
     ports:
       - "8080:80"
+      - "8443:443"
     volumes:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./caddy/index.html:/usr/share/caddy/index.html:ro
+      - caddy_data:/data
+
+volumes:
+  caddy_data:

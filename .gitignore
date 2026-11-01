@@ -1,2 +1,5 @@
 # Environment variables and secrets
 .env
+
+# Caddy local certificates
+caddy/root.crt
